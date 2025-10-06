@@ -161,4 +161,4 @@ with tab3:
 # FOOTER
 # ---------------------------------------------
 st.markdown("---")
-st.caption("Prototype — IBU Capstone Simi
+st.caption("Prototype — IBU Capstone Similarity & Insights Dashboard | Built by Shakksha")
