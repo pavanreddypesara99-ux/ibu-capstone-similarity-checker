@@ -79,19 +79,29 @@ if st.button("Check Similarity"):
         order = np.argsort(similarity_scores)[::-1][:top_k]
 
         # -------------------------------
-        # DISPLAY RESULTS
+        # DISPLAY RESULTS WITH DETAILS
         # -------------------------------
         st.subheader("📊 Top Similar Titles")
-        for rank, idx in enumerate(order, start=1):
-            project = past_titles[idx]
-            score = similarity_scores[idx] * 100
-            st.write(f"{rank}. **{project}** — {score:.2f}%")
-            
-            # Optional: show details if your sheet has columns like Program, Year, etc.
-            if "Program" in df_titles.columns:
-                details = df_titles.iloc[idx]
-                st.caption(f"📘 Program: {details.get('Program', 'N/A')} | 👩‍🏫 Supervisor: {details.get('Supervisor', 'N/A')} | 📅 Year: {details.get('Year', 'N/A')}")
 
+        for rank, idx in enumerate(order, start=1):
+            row = df_titles.iloc[idx]
+            project = str(row.get("Project Title", "N/A"))
+            score = similarity_scores[idx] * 100
+
+            # Title + Score
+            st.markdown(f"**{rank}. {project}** — {score:.2f}% similarity")
+
+            # Show full metadata
+            st.caption(
+                f"👩‍🎓 **Student:** {row.get('Student Name', 'N/A')}  \n"
+                f"🎓 **Program:** {row.get('Program', 'N/A')} | 📅 **Year:** {row.get('Year', 'N/A')}  \n"
+                f"👩‍🏫 **Supervisor:** {row.get('Supervisor', 'N/A')}"
+            )
+            st.write("---")
+
+        # -------------------------------
+        # OVERLAP LEVEL INDICATOR
+        # -------------------------------
         best = similarity_scores[order[0]] * 100 if len(order) else 0
         if best > 80:
             st.error("⚠️ High overlap! Please consider modifying your topic (best match > 80%).")
