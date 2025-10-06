@@ -4,16 +4,19 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import pandas as pd
 
+# -------------------------------
+# PAGE CONFIGURATION
+# -------------------------------
 st.set_page_config(page_title="IBU Capstone Similarity Checker", layout="centered")
 st.title("🎓 IBU Capstone Similarity Checker")
 st.write("Type your capstone title and check how similar it is to past projects.")
 
-# Sidebar – upload CSV option
-st.sidebar.header("📁 Data Source")
-uploaded = st.sidebar.file_uploader("Upload CSV of past capstone titles", type=["csv"])
-st.sidebar.caption("CSV should have a column named 'Project Title' or 'title'.")
+# -------------------------------
+# SIDEBAR: GOOGLE SHEET CONNECTION
+# -------------------------------
+st.sidebar.header("📄 Google Sheet (Live Data)")
 
-# Default titles
+# Fallback dataset (in case Google Sheet isn't reachable)
 default_titles = [
     "AI and Blockchain in Supply Chain Management",
     "Machine Learning Applications in Healthcare",
@@ -27,47 +30,67 @@ default_titles = [
     "Automation and Robotics in Manufacturing"
 ]
 
-def load_titles():
-    if uploaded is None:
-        return pd.DataFrame({"Project Title": default_titles})
-    try:
-        df = pd.read_csv(uploaded)
-        cols = [c for c in df.columns if c.strip().lower() in ["project title", "title", "project_title", "project"]]
-        if not cols:
-            st.error("CSV must include a 'Project Title' or 'title' column.")
-            return pd.DataFrame({"Project Title": default_titles})
-        df = df.rename(columns={cols[0]: "Project Title"})
-        df = df.dropna(subset=["Project Title"])
-        df["Project Title"] = df["Project Title"].astype(str).str.strip()
-        return df
-    except Exception as e:
-        st.error(f"Error reading CSV: {e}")
-        return pd.DataFrame({"Project Title": default_titles})
+# Google Sheet link (replace with your published CSV link)
+sheet_url = st.sidebar.text_input(
+    "Paste your Google Sheet CSV link here:",
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQAoO_eJz3idWJSu4PVCzgBgEw_NDFwFgNiAOAGoQSvkvTMdZyxwVHiHSuPseZEvpoH6Z8SKDF077b/pub?output=csv"
+)
 
-df_titles = load_titles()
+# Try loading the Google Sheet
+try:
+    df_titles = pd.read_csv(sheet_url)
+    df_titles = df_titles.rename(columns=lambda x: x.strip())
+    st.sidebar.success("✅ Loaded data from Google Sheet successfully!")
+except Exception as e:
+    st.sidebar.warning("⚠️ Could not load Google Sheet. Using default dataset instead.")
+    df_titles = pd.DataFrame({"Project Title": default_titles})
+
+# Check data structure
+if "Project Title" not in df_titles.columns:
+    st.error("❌ Your data must have a column named 'Project Title'. Please fix it in the Google Sheet.")
+    st.stop()
+
 st.caption(f"Loaded {len(df_titles)} past titles.")
 if len(df_titles) > 0:
     st.write("Example titles:", df_titles["Project Title"].head(5).tolist())
 
+# -------------------------------
+# INPUT SECTION
+# -------------------------------
 new_title = st.text_input("Enter your Capstone Title:")
 top_k = st.slider("How many similar titles to show?", min_value=1, max_value=10, value=3)
 
+# -------------------------------
+# SIMILARITY CALCULATION
+# -------------------------------
 if st.button("Check Similarity"):
     if not new_title.strip():
         st.warning("Please enter a title first.")
     elif len(df_titles) == 0:
-        st.error("No titles available to compare. Please upload a valid CSV.")
+        st.error("No titles available to compare. Please check your data source.")
     else:
         past_titles = df_titles["Project Title"].fillna("").astype(str).tolist()
+
+        # TF-IDF + Cosine Similarity
         vectorizer = TfidfVectorizer(stop_words="english")
         all_titles = past_titles + [new_title]
         tfidf_matrix = vectorizer.fit_transform(all_titles)
         similarity_scores = cosine_similarity(tfidf_matrix[-1], tfidf_matrix[:-1])[0]
         order = np.argsort(similarity_scores)[::-1][:top_k]
 
+        # -------------------------------
+        # DISPLAY RESULTS
+        # -------------------------------
         st.subheader("📊 Top Similar Titles")
         for rank, idx in enumerate(order, start=1):
-            st.write(f"{rank}. **{past_titles[idx]}** — {similarity_scores[idx]*100:.2f}%")
+            project = past_titles[idx]
+            score = similarity_scores[idx] * 100
+            st.write(f"{rank}. **{project}** — {score:.2f}%")
+            
+            # Optional: show details if your sheet has columns like Program, Year, etc.
+            if "Program" in df_titles.columns:
+                details = df_titles.iloc[idx]
+                st.caption(f"📘 Program: {details.get('Program', 'N/A')} | 👩‍🏫 Supervisor: {details.get('Supervisor', 'N/A')} | 📅 Year: {details.get('Year', 'N/A')}")
 
         best = similarity_scores[order[0]] * 100 if len(order) else 0
         if best > 80:
@@ -77,5 +100,8 @@ if st.button("Check Similarity"):
         else:
             st.success("✅ Low overlap (best match < 50%). Your topic seems unique!")
 
+# -------------------------------
+# FOOTER
+# -------------------------------
 st.markdown("---")
 st.caption("Prototype — IBU Capstone Similarity Checker | Built by Shakksha")
