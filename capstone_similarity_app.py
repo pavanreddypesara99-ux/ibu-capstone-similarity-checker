@@ -17,7 +17,7 @@ st.title("🎓 IBU Capstone Project Portal")
 st.sidebar.header("📄 Google Sheet (Live Data)")
 sheet_url = st.sidebar.text_input(
     "Paste your Google Sheet CSV link here:",
-    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQAoO_eJz3idWJSu4PVCzgBgEw_NDFwFgNiAOAGoQSvkvTMdZyxwVHiHSuPseZEvpoH6Z8SKDF077b/pub?output=csv"
+    "https://script.google.com/macros/s/AKfycbyk0hNT0WSx6xETPZGJ84QTq6-NjCQQJ-UgUQ9kNGH3xCuNvzjOkhCXDmuNQChVvfXD3A/exec"
 )
 try:
     df_titles = pd.read_csv(sheet_url)
