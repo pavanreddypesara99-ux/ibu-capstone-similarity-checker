@@ -5,31 +5,38 @@ import numpy as np
 import pandas as pd
 import requests
 
-# -------------------------------
-# PAGE CONFIG
-# -------------------------------
+# ---------------------------------------------
+# PAGE CONFIGURATION
+# ---------------------------------------------
 st.set_page_config(page_title="IBU Capstone Project Portal", layout="centered")
 st.title("🎓 IBU Capstone Project Portal")
 
-# -------------------------------
+# ---------------------------------------------
 # SIDEBAR: GOOGLE SHEET CONNECTION
-# -------------------------------
+# ---------------------------------------------
 st.sidebar.header("📄 Google Sheet (Live Data)")
 sheet_url = st.sidebar.text_input(
     "Paste your Google Sheet CSV link here:",
-    "https://script.google.com/macros/s/AKfycbyk0hNT0WSx6xETPZGJ84QTq6-NjCQQJ-UgUQ9kNGH3xCuNvzjOkhCXDmuNQChVvfXD3A/exec"
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQAoO_eJz3idWJSu4PVCzgBgEw_NDFwFgNiAOAGoQSvkvTMdZyxwVHiHSuPseZEvpoH6Z8SKDF077b/pub?output=csv"
 )
+
 try:
     df_titles = pd.read_csv(sheet_url)
     df_titles = df_titles.rename(columns=lambda x: x.strip())
     st.sidebar.success("✅ Loaded data from Google Sheet successfully!")
 except Exception as e:
     st.sidebar.warning("⚠️ Could not load Google Sheet. Using default dataset instead.")
-    df_titles = pd.DataFrame({"Project Title": []})
+    df_titles = pd.DataFrame({
+        "Student Name": [],
+        "Program": [],
+        "Year": [],
+        "Supervisor": [],
+        "Project Title": []
+    })
 
-# -------------------------------
+# ---------------------------------------------
 # MAIN TABS
-# -------------------------------
+# ---------------------------------------------
 tab1, tab2, tab3 = st.tabs(["🔍 Similarity Checker", "📊 Faculty Dashboard", "📝 Submit New Capstone"])
 
 # ==============================================================
@@ -129,8 +136,8 @@ with tab3:
             if not all([student_name, program, year, supervisor, project_title]):
                 st.warning("⚠️ Please fill in all fields.")
             else:
-                # Paste your Web App URL from Apps Script here 👇
-                script_url = "https://script.google.com/macros/s/PASTE_YOUR_SCRIPT_URL_HERE/exec"
+                # ✅ Use your deployed Google Apps Script URL
+                script_url = "https://script.google.com/macros/s/AKfycbyk0hNT0WSx6xETPZGJ84QTq6-NjCQQJ-UgUQ9kNGH3xCuNvzjOkhCXDmuNQChVvfXD3A/exec"
 
                 payload = {
                     "student_name": student_name,
@@ -144,13 +151,14 @@ with tab3:
                     response = requests.post(script_url, json=payload)
                     if response.status_code == 200:
                         st.success("✅ Project added successfully!")
+                        st.balloons()
                     else:
                         st.error(f"❌ Error submitting data (status {response.status_code}).")
                 except Exception as e:
                     st.error(f"⚠️ Failed to connect to Google Script: {e}")
 
-# -------------------------------
+# ---------------------------------------------
 # FOOTER
-# -------------------------------
+# ---------------------------------------------
 st.markdown("---")
-st.caption("Prototype — IBU Capstone Similarity & Insights Dashboard | Built by Shakksha")
+st.caption("Prototype — IBU Capstone Simi
